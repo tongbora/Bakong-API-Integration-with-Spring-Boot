@@ -13,6 +13,9 @@ A Spring Boot project demonstrating how to integrate with the **Bakong Open API*
 - [Configuration](#configuration)
 - [API Endpoints](#api-endpoints)
 - [Usage Guide](#usage-guide)
+- [KHQR Card UI Design](#khqr-card-ui-design)
+- [KHQR Assets](#khqr-assets)
+- [Project Structure](#project-structure)
 - [Notes](#notes)
 
 ---
@@ -28,13 +31,16 @@ Before starting the integration, you need to:
 
 ## Resources & Documentation
 
-Read these documents before starting the integration:
+Read these documents before starting the integration. All PDFs are also available locally inside the `integration/` folder of this project.
 
-| Resource | Link |
-|---|---|
-| Bakong Open API Documentation | [Download PDF](https://bakong.nbc.gov.kh/download/KHQR/integration/Bakong%20Open%20API%20Document.pdf) |
-| KHQR SDK Documentation | [Download PDF](https://bakong.nbc.gov.kh/download/KHQR%20SDK.pdf) |
-| Bakong Open API Portal | [https://api-bakong.nbc.gov.kh/](https://api-bakong.nbc.gov.kh/) |
+| Resource | Description | Link |
+|---|---|---|
+| Bakong Open API Document | Core API reference for authentication and endpoints | [Download PDF](https://bakong.nbc.gov.kh/download/KHQR/integration/Bakong%20Open%20API%20Document.pdf) |
+| KHQR SDK Document | Guide for using the KHQR Java SDK | [Download PDF](https://bakong.nbc.gov.kh/download/KHQR%20SDK.pdf) |
+| KHQR Content Guideline v1.3 | Content and data field standards for KHQR | `integration/KHQR Content Guideline v.1.3.pdf` |
+| QR Payment Integration | End-to-end QR payment integration guide | `integration/QR Payment Integration.pdf` |
+| KHQR Card Guideline | Official UI/design guideline for KHQR card display | [Download PDF](https://bakong.nbc.gov.kh/en/download/KHQR/guideline/KHQR%20Card%20Guideline.pdf) |
+| Bakong Open API Portal | Register and get your Bearer Token | [https://api-bakong.nbc.gov.kh/](https://api-bakong.nbc.gov.kh/) |
 
 ---
 
@@ -217,12 +223,56 @@ Content-Type: application/json
 
 ---
 
-## Notes
+## KHQR Card UI Design
 
-- **Token Expiry:** The Bearer Token obtained from the Bakong Open API portal has an expiration date. Make sure to renew it before it expires to avoid `403 Forbidden` errors.
-- **Production Restriction:** The `check-transaction` endpoint can only be called from servers **located in Cambodia** in a production environment. Calls from servers outside Cambodia will be blocked.
-- **Currency:** The example uses USD. You can change the currency to KHR by modifying the `KHQRCurrency` setting in `MerchantInfo`.
-- **Customization:** The `MerchantInfo` object (merchant name, city, bill number, etc.) should be updated to match your actual business information before going to production.
+The **KHQR Card** is a standardized payment card UI that displays the KHQR logo, merchant name, payment amount, and the scannable QR code. This is what a customer sees when they are about to make a payment.
+
+> 🎨 **You are responsible for designing and building this UI yourself.** The National Bank of Cambodia (NBC) provides strict branding guidelines that must be followed when displaying KHQR in any application.
+
+### Design Guidelines
+
+Download and follow the official **KHQR Card Guideline** from NBC:
+
+📄 [KHQR Card Guideline PDF](https://bakong.nbc.gov.kh/en/download/KHQR/guideline/KHQR%20Card%20Guideline.pdf)
+
+The guideline covers:
+
+- Correct usage of the KHQR logo (color, size, placement)
+- Card layout, proportions, and color palette
+- Typography and font rules
+- Dos and Don'ts for displaying the QR code
+- Safe zones and spacing requirements
+
+### Example Card Layout
+
+![KHQR Card Example](KHQR%20-%20asset/KHQR%20-%20digital%20payment.svg)
+
+### How to Build It
+
+1. Call `/generate-qr` to get the `qr` string and `md5`.
+2. Call `/get-qr-image` with the `qr` string to get the PNG image.
+3. Display the image inside your custom-designed KHQR card UI.
+4. Use the official logos and assets from the `KHQR - asset/` folder (see [KHQR Assets](#khqr-assets) below).
+5. Follow the card guideline PDF strictly for correct branding.
+
+---
+
+## KHQR Assets
+
+Official KHQR brand assets are included in the `KHQR - asset/` folder of this project. These assets are provided by the National Bank of Cambodia and **must be used as-is** according to the KHQR branding guidelines.
+
+| File | Format | Usage |
+|---|---|---|
+| `KHQR Logo red.png` / `.svg` / `.jpg` | PNG, SVG, JPG | Primary KHQR logo on red background — use in card header |
+| `KHQR Logo.png` / `.svg` / `.jpg` | PNG, SVG, JPG | KHQR logo on white/transparent background |
+| `KHQR available here - logo with bg.png` / `.svg` / `.jpg` | PNG, SVG, JPG | "KHQR Available Here" badge — use at point of sale |
+| `KHQR - digital payment.svg` | SVG | Digital payment banner graphic |
+| `QR Stand for export.svg` | SVG | QR stand display for physical/print usage |
+| `QR Tag.svg` | SVG | QR tag for labeling or printing |
+
+> 💡 **Tip:** Use the `.svg` versions whenever possible for sharp rendering at any screen size. Use `.png` for environments that do not support SVG.
+
+> ⚠️ Do not modify, recolor, or distort any of the official KHQR assets. Refer to the [KHQR Card Guideline](https://bakong.nbc.gov.kh/en/download/KHQR/guideline/KHQR%20Card%20Guideline.pdf) for approved usage rules.
 
 ---
 
@@ -234,17 +284,17 @@ src/
 │   ├── java/
 │   │   └── com.tongbora.bakongapiintergration/
 │   │       ├── config/
-│   │       │   ├── JacksonConfig.java          # Jackson ObjectMapper configuration
-│   │       │   └── RestTemplateConfig.java     # RestTemplate bean configuration
+│   │       │   ├── JacksonConfig.java           # Jackson ObjectMapper
+│   │       │   └── RestTemplateConfig.java      # RestTemplate bean
 │   │       ├── controller/
-│   │       │   └── BakongController.java       # REST API endpoints
+│   │       │   └── BakongController.java        # REST API endpoints
 │   │       ├── dto/
-│   │       │   └── BakongRequest.java          # Request DTO (amount)
+│   │       │   └── BakongRequest.java           # Request DTO (amount)
 │   │       ├── service/
-│   │       │   ├── BakongService.java          # Service interface
+│   │       │   ├── BakongService.java           # Service interface
 │   │       │   └── impl/
-│   │       │       └── BakongServiceImpl.java  # Business logic implementation
-│   │       └── BakongApiIntergrationApplication.java  # Spring Boot entry point
+│   │       │       └── BakongServiceImpl.java   # Business logic
+│   │       └── BakongApiIntergrationApplication.java
 │   └── resources/
 │       ├── static/
 │       ├── templates/
@@ -252,6 +302,18 @@ src/
 │       └── application-dev.properties
 └── test/
 ```
+
+> 📁 The project also includes an `integration/` folder with all official NBC documentation PDFs, and a `KHQR - asset/` folder with official KHQR brand assets. You can download both directly from the project repository.
+
+---
+
+## Notes
+
+- **Token Expiry:** The Bearer Token obtained from the Bakong Open API portal has an expiration date. Make sure to renew it before it expires to avoid `403 Forbidden` errors.
+- **Production Restriction:** The `check-transaction` endpoint can only be called from servers **located in Cambodia** in a production environment. Calls from servers outside Cambodia will be blocked.
+- **Currency:** The example uses USD. You can change the currency to KHR by modifying the `KHQRCurrency` setting in `MerchantInfo`.
+- **Customization:** The `MerchantInfo` object (merchant name, city, bill number, etc.) should be updated to match your actual business information before going to production.
+- **Branding Compliance:** When displaying KHQR in any customer-facing UI, always follow the official KHQR Card Guideline and use only the approved assets from the `KHQR - asset/` folder.
 
 ---
 
