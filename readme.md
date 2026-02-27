@@ -1,6 +1,8 @@
 # Bakong API Integration with Spring Boot
 
-A Spring Boot project demonstrating how to integrate with the **Bakong Open API** and **KHQR SDK** to generate QR codes for payments and verify transactions.
+A **Spring Boot** project demonstrating how to integrate with the **Bakong Open API** and **KHQR SDK** — Cambodia's official QR payment system developed by the **National Bank of Cambodia (NBC)**. This project covers generating **KHQR** payment QR codes, rendering scannable QR images, and verifying transactions using the **Bakong Java SDK**.
+
+> 🇰🇭 If you are a developer in Cambodia looking to integrate **Bakong QR payment**, **KHQR**, or the **NBC Open API** into your Java or Spring Boot application — this project is for you.
 
 ---
 
