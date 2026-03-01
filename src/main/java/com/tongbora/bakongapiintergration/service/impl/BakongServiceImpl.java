@@ -11,6 +11,7 @@ import com.tongbora.bakongapiintergration.dto.BakongRequest;
 import com.tongbora.bakongapiintergration.dto.BakongResponse;
 import com.tongbora.bakongapiintergration.dto.CheckTransactionRequest;
 import com.tongbora.bakongapiintergration.service.BakongService;
+import com.tongbora.bakongapiintergration.service.BakongTokenService;
 import kh.gov.nbc.bakong_khqr.BakongKHQR;
 import kh.gov.nbc.bakong_khqr.model.KHQRCurrency;
 import kh.gov.nbc.bakong_khqr.model.KHQRData;
@@ -36,6 +37,7 @@ public class BakongServiceImpl implements BakongService {
 
     private final RestTemplate restTemplate;
     private final ObjectMapper mapper;
+    private final BakongTokenService bakongTokenService;
 
     @Value("${bakong.account-id}")
     private String bakongAccountId;
@@ -49,8 +51,8 @@ public class BakongServiceImpl implements BakongService {
     private String storeLabel;
     @Value("${bakong.base-url}")
     private String baseUrl;
-    @Value("${bakong.bearer-token}")
-    private String bearerToken;
+//    @Value("${bakong.bearer-token}")
+//    private String bearerToken;
 
     @Override
     public KHQRResponse<KHQRData> generateQR(BakongRequest request) {
@@ -108,10 +110,7 @@ public class BakongServiceImpl implements BakongService {
 
     @Override
     public BakongResponse checkTransactionByMD5(CheckTransactionRequest request) {
-
-        if (baseUrl == null || bearerToken == null) {
-            throw new IllegalStateException("Bakong is not configured");
-        }
+        String bearerToken = bakongTokenService.getToken();
 
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.APPLICATION_JSON);
