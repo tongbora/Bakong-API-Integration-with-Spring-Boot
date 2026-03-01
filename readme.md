@@ -13,6 +13,7 @@ A **Spring Boot** project demonstrating how to integrate with the **Bakong Open 
 - [Project Setup](#project-setup)
 - [Dependencies](#dependencies)
 - [Configuration](#configuration)
+- [Token Auto-Renewal](#token-auto-renewal)
 - [API Endpoints](#api-endpoints)
 - [Usage Guide](#usage-guide)
 - [KHQR Card UI Design](#khqr-card-ui-design)
@@ -76,7 +77,6 @@ implementation 'com.fasterxml.jackson.core:jackson-databind:2.15.2'
 
 ```properties
 spring.application.name=bakong-api-integration
-
 # Bakong Configuration (loaded from environment or profile properties)
 bakong.account-id=${BAKONG_ACCOUNT_ID}
 bakong.acquiring-bank=${ACQUIRINGBANK}
@@ -84,7 +84,7 @@ bakong.merchant-name=${MERCHANTNAME}
 bakong.mobile-number=${MOBILENUMBERSTORELABEL}
 bakong.store-label=${STORELABEL}
 bakong.base-url=${BAKONG_BASE_URL}
-bakong.bearer-token=${BAKONG_BEARER_TOKEN}
+bakong.email=${EMAIL}
 ```
 
 ### `application-dev.properties`
@@ -96,10 +96,34 @@ MERCHANTNAME=Your-Merchant-Name
 MOBILENUMBERSTORELABEL=YourLabel
 STORELABEL=YourStoreLabel
 BAKONG_BASE_URL=https://api-bakong.nbc.gov.kh
-BAKONG_BEARER_TOKEN=your_jwt_bearer_token_here
+EMAIL=your_registered_email@example.com
 ```
 
-> ⚠️ **Security Warning:** Never commit real tokens or credentials to version control. Use environment variables or a secrets manager in production.
+> ⚠️ **Security Warning:** Never commit real credentials to version control. Use environment variables or a secrets manager in production.
+
+> 💡 **No need to manage tokens manually.** The `BakongTokenService` automatically fetches and caches the Bearer Token using your registered email. It decodes the JWT expiry and renews the token automatically before it expires.
+
+---
+
+## Token Auto-Renewal
+
+Previously, you had to manually copy and paste the Bearer Token from the Bakong portal into your config. This project handles token management automatically.
+
+The `BakongTokenService` works as follows:
+
+1. On the first request, it calls the Bakong `/v1/renew_token` endpoint using your registered **email address**
+2. It decodes the returned **JWT** to read the real expiry time (`exp` claim)
+3. The token is **cached in memory** — subsequent requests reuse it without hitting the API again
+4. When the token is **expired**, it automatically fetches a new one
+
+This means you only need to provide your `EMAIL` in the config — no manual token copying needed.
+
+```
+POST /v1/renew_token
+Body: { "email": "your_registered_email@example.com" }
+```
+
+> 🔒 The token is stored in memory only (not on disk). It is renewed per application instance and resets on restart.
 
 ---
 
@@ -313,8 +337,10 @@ src/
 │   │       │   └── CheckTransactionRequest.java # Check transaction DTO
 │   │       ├── service/
 │   │       │   ├── BakongService.java           # Service interface
+│   │       │   ├── BakongTokenService.java      # Token service interface
 │   │       │   └── impl/
-│   │       │       └── BakongServiceImpl.java   # Business logic
+│   │       │       ├── BakongServiceImpl.java   # Business logic
+│   │       │       └── BakongTokenServiceImpl.java # Token auto-renewal
 │   │       └── BakongApiIntergrationApplication.java
 │   └── resources/
 │       ├── static/
@@ -330,7 +356,7 @@ src/
 
 ## Notes
 
-- **Token Expiry:** The Bearer Token obtained from the Bakong Open API portal has an expiration date. Make sure to renew it before it expires to avoid `403 Forbidden` errors.
+- **Token Auto-Renewal:** The app automatically renews the Bearer Token using your registered email. You no longer need to manually copy tokens from the Bakong portal.
 - **Production Restriction:** The `check-transaction` endpoint can only be called from servers **located in Cambodia** in a production environment. Calls from servers outside Cambodia will be blocked.
 - **Currency:** The example uses USD. You can change the currency to KHR by modifying the `KHQRCurrency` setting in `MerchantInfo`.
 - **Customization:** The `MerchantInfo` object (merchant name, city, bill number, etc.) should be updated to match your actual business information before going to production.
