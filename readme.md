@@ -109,8 +109,8 @@ All endpoints are prefixed with `/api/v1/bakong`.
 
 | Method | Endpoint | Description |
 |---|---|---|
-| `GET` | `/generate-qr` | Generates a KHQR string and MD5 hash |
-| `GET` | `/get-qr-image` | Converts a KHQR string into a scannable PNG image |
+| `POST` | `/generate-qr` | Generates a KHQR string and MD5 hash |
+| `POST` | `/get-qr-image` | Converts a KHQR string into a scannable PNG image |
 | `POST` | `/check-transaction` | Checks if a transaction has been completed using its MD5 hash |
 
 ---
@@ -126,7 +126,7 @@ Call the `generate-qr` endpoint with the payment amount. This returns a KHQR str
 **Request:**
 
 ```
-GET http://localhost:8080/api/v1/bakong/generate-qr
+POST http://localhost:8080/api/v1/bakong/generate-qr
 Content-Type: application/json
 
 {
@@ -161,7 +161,7 @@ Pass the `qr` string from Step 1 to generate a scannable PNG QR code image.
 **Request:**
 
 ```
-GET http://localhost:8080/api/v1/bakong/get-qr-image
+POST http://localhost:8080/api/v1/bakong/get-qr-image
 Content-Type: application/json
 
 {
@@ -180,6 +180,20 @@ The endpoint returns a PNG image (`image/png`). Display or download the image so
 
 After the customer scans and pays, use the `md5` hash from Step 1 to verify whether the payment was successful.
 
+The response is mapped to a `BakongResponse` record:
+
+```java
+public record BakongResponse(
+    int responseCode,
+    String responseMessage,
+    Integer errorCode,
+    Object data
+)
+```
+
+> ✅ **`responseCode: 0`** — Transaction successful
+> ❌ **`responseCode: 1`** — Transaction not found or not yet paid
+
 **Request:**
 
 ```
@@ -191,13 +205,12 @@ Content-Type: application/json
 }
 ```
 
-**Response — Payment Successful:**
+**Response — Payment Successful (`responseCode: 0`):**
 
 ```json
 {
     "responseCode": 0,
     "responseMessage": "Success",
-    "errorCode": null,
     "data": {
         "hash": "bf917e9534cac3595ee5dc5a9e7d3b120b6143ff3b368c244189cf22ed9af877",
         "fromAccountId": "customer@bank",
@@ -212,7 +225,7 @@ Content-Type: application/json
 }
 ```
 
-**Response — Payment Not Found:**
+**Response — Payment Not Found (`responseCode: 1`):**
 
 ```json
 {
@@ -222,6 +235,10 @@ Content-Type: application/json
     "data": null
 }
 ```
+
+> 💡 You can check `responseCode` in your frontend or backend logic to determine the payment status:
+> - `responseCode == 0` → Payment confirmed, proceed with order
+> - `responseCode == 1` → Payment not yet made or MD5 is incorrect
 
 ---
 
@@ -291,7 +308,9 @@ src/
 │   │       ├── controller/
 │   │       │   └── BakongController.java        # REST API endpoints
 │   │       ├── dto/
-│   │       │   └── BakongRequest.java           # Request DTO (amount)
+│   │       │   ├── BakongRequest.java           # Request DTO (amount)
+│   │       │   ├── BakongResponse.java          # Response DTO
+│   │       │   └── CheckTransactionRequest.java # Check transaction DTO
 │   │       ├── service/
 │   │       │   ├── BakongService.java           # Service interface
 │   │       │   └── impl/
