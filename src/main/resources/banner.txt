@@ -1,0 +1,9 @@
+${AnsiColor.BRIGHT_GREEN}
+  ____          _
+ | __ )  __ _  | | __ ___  _ __   __ _
+ |  _ \ / _` | | |/ // _ \| '_ \ / _` |
+ | |_) | (_| | |   <| (_) | | | | (_| |
+ |____/ \__,_| |_|\_\\___/|_| |_|\__, |
+                                  |___/
+${AnsiColor.DEFAULT}
+${AnsiColor.GREEN} :: Bakong API Integration ::${AnsiColor.DEFAULT}  (v${spring-boot.version})
